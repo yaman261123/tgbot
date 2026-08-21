@@ -24,41 +24,37 @@ user_data = {}
 def btk_sorgula(domain: str) -> str:
     session = requests.Session()
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
     
+    # PythonAnywhere engelini aşmak için harici bir proxy tüneli
+    proxy_url = "http://pubproxy.com/api/proxy?country=TR&type=http"
+    
+    try:
+        # Önce çalışan bir TR proxy almayı dener
+        proxy_res = requests.get(proxy_url, timeout=5).json()
+        proxy_ip = proxy_res['data'][0]['ipPort']
+        proxies = {"http": f"http://{proxy_ip}", "https": f"http://{proxy_ip}"}
+    except:
+        proxies = None
+
     try:
         main_url = "https://internet.btk.gov.tr/sitesorgu/"
-        session.get(main_url, headers=headers, timeout=10)
-        
-        captcha_code = "1234" # Varsayılan/OCR okuma
-        if HAS_OCR:
-            try:
-                captcha_url = "https://internet.btk.gov.tr/sitesorgu/secureimage/captcha.php"
-                captcha_res = session.get(captcha_url, headers=headers, timeout=10)
-                image = Image.open(io.BytesIO(captcha_res.content))
-                captcha_code = pytesseract.image_to_string(image, config='--psm 6 digits').strip()
-            except Exception:
-                pass
-        
-        payload = {
-            "deger": domain,
-            "security_code": captcha_code,
-            "submit1": "Sorgula",
-            "ayrintili": "0"
-        }
-        
-        response = session.post(main_url, data=payload, headers=headers, timeout=10)
+        response = session.post(
+            main_url, 
+            data={"deger": domain, "submit1": "Sorgula"}, 
+            headers=headers, 
+            proxies=proxies, 
+            timeout=15
+        )
         soup = BeautifulSoup(response.text, 'html.parser')
-        
         karar_div = soup.find("div", class_="kararSonucInner")
+        
         if karar_div:
             return karar_div.get_text(strip=True)
-        else:
-            return "Uygulanan bir karar bulunamadı veya bağlantı sağlandı."
-            
+        return "Uygulanan bir karar bulunamadı veya siteye erişim sağlanıyor."
     except Exception as e:
-        return f"Sorgu hatası: {str(e)}"
+        return f"Sorgu hatası (Proxy/Bağlantı): {str(e)}"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
