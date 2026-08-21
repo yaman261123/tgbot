@@ -165,7 +165,7 @@ async def ototakip_job(context: ContextTypes.DEFAULT_TYPE):
             data["domains"][domain] = new_status
 
 if __name__ == '__main__':
-    BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+    BOT_TOKEN = "7957246046:AAFVn5_6tVWCC9DidW6YUR7ak7O9jJsFc9Q"
     
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
